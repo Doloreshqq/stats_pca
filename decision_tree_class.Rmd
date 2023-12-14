@@ -1,0 +1,46 @@
+---
+title: "decision_tree"
+author: "Qin Huang"
+date: "2023-09-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rpart)
+library(rpart.plot)
+```
+
+
+```{r cars}
+library(dplyr)
+raw_data = read_csv("glm_100_d9.csv")
+
+raw_data = raw_data %>%
+  mutate(is_nine = as.factor(is_nine))
+
+#set.seed(210)
+train_id = sample(1:nrow(raw_data), 0.7*nrow(raw_data))
+train = raw_data[train_id,]
+test = raw_data[-train_id,]
+
+
+```
+
+
+
+```{r}
+
+tree = rpart(is_nine~.,data = train)
+rpart.plot(tree)
+
+```
+
+
+```{r}
+
+pre_tree = predict(tree, newdata = test, type = 'class')
+out = table(list(prediction = pre_tree, true = test$is_nine))
+out
+```

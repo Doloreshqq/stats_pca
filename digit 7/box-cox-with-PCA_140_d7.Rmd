@@ -1,0 +1,115 @@
+---
+title: "box-cox-with-PCA"
+output: html_document
+date: "2023-08-13"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Load the required libraries
+library(tidyverse)
+library(caret)
+library(MASS)
+library(car)
+
+
+```
+
+```{r}
+# Load the dataset
+data <- read.csv("pca_data_140_d7.csv")  # Update with the actual CSV file name
+
+# Display the structure of the loaded data
+str(data)
+
+```
+
+```{r}
+# Load the dplyr package for data manipulation
+library(dplyr)
+
+# Normalize each feature to the range [0, 1]
+normalized_data <- data %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+
+# Display the first few rows of the normalized data
+head(normalized_data)
+
+
+```
+
+```{r}
+col_name <- NULL;
+for (i in 1:400) {
+  
+  col_name <-  paste0(col_name,"f_", i,"+")
+  #data[, col_name] <- boxcox(data[, paste0("Feature_", i)], lambda = NULL)$x
+}
+cat(col_name)
+```
+
+```{r}
+model_2  = lm(pred_prob ~ f_1+f_2+f_3+f_4+f_5+f_6+f_7+f_8+f_9+f_10+f_11+f_12+f_13+f_14+f_15+f_16+f_17+f_18+f_19+f_20+f_21+f_22+f_23+f_24+f_25+f_26+f_27+f_28+f_29+f_30+f_31+f_32+f_33+f_34+f_35+f_36+f_37+f_38+f_39+f_40+f_41+f_42+f_43+f_44+f_45+f_46+f_47+f_48+f_49+f_50+f_51+f_52+f_53+f_54+f_55+f_56+f_57+f_58+f_59+f_60+f_61+f_62+f_63+f_64+f_65+f_66+f_67+f_68+f_69+f_70+f_71+f_72+f_73+f_74+f_75+f_76+f_77+f_78+f_79+f_80+f_81+f_82+f_83+f_84+f_85+f_86+f_87+f_88+f_89+f_90+f_91+f_92+f_93+f_94+f_95+f_96+f_97+f_98+f_99+f_100+f_101+f_102+f_103+f_104+f_105+f_106+f_107+f_108+f_109+f_110+f_111+f_112+f_113+f_114+f_115+f_116+f_117+f_118+f_119+f_120+f_121+f_122+f_123+f_124+f_125+f_126+f_127+f_128+f_129+f_130+f_131+f_132+f_133+f_134+f_135+f_136+f_137+f_138+f_139+f_140, data = normalized_data)
+summary(model_2)
+```
+
+```{r}
+
+plot(model_2)
+```
+
+```{r}
+
+residuals <- residuals(model_2)
+
+# Create the AV plot
+avPlots(model_2)
+
+# Create the CR plot
+crPlots(model_2)
+
+```
+
+```{r}
+# Apply Box-Cox transformation to the target variable (response) if needed
+# For example, if you have a response variable named 'y', you can transform it like this:
+# data$y_transformed <- boxcox(data$y, lambda = NULL)
+# Uncomment and modify the above line based on your data
+
+# Apply Box-Cox transformation to the features
+# Assuming the transformed features are named 'Feature_1_transformed', ..., 'Feature_10_transformed'
+
+boxcox(data[, paste0("Feature_1")], lambda = NULL)
+for (i in 1:10) {
+  boxcox(data[, paste0("Feature_", i)], lambda = NULL)
+  #col_name <- paste0("Feature_", i, "_transformed")
+  #data[, col_name] <- boxcox(data[, paste0("Feature_", i)], lambda = NULL)$x
+}
+
+# Define the list of transformed feature names
+transformed_feature_names <- paste0("Feature_", 1:10, "_transformed")  # Adjust the range as needed
+
+# Construct the formula for MLR
+formula <- reformulate(transformed_feature_names, response = "y")
+
+# Perform Multiple Linear Regression (MLR) using the transformed features
+model <- lm(formula, data = data)
+
+# Display the summary of the MLR model
+summary(model)
+
+
+```
+
+```{r}
+model3  = lm(pred_prob ~ f_1+f_2+f_3+f_4+f_5+f_6+f_7+f_8+f_9+f_10+f_11+f_12+f_13+f_14+f_15+f_16+f_17+f_18+f_19+f_20+f_21+f_22+f_23+f_24+f_25+f_26+f_27+f_28+f_29+f_30+f_31+f_32+f_33+f_34+f_35+f_36+f_37+f_38+f_39+f_40+f_41+f_42+f_43+f_44+f_45+f_46+f_47+f_48+f_49+f_50+f_51+f_52+f_53+f_54+f_55+f_56+f_57+f_58+f_59+f_60+f_61+f_62+f_63+f_64+f_65, data = normalized_data)
+summary(model3)
+```
+
+```{r}
+model4  = lm(pred_prob ~ f_250+f_251+f_252+f_253+f_254+f_255+f_256+f_257+f_258+f_259+f_260+f_261+f_262+f_263+f_264+f_265+f_266+f_267+f_268+f_269+f_270+f_271+f_272+f_273+f_274+f_275+f_276+f_277+f_278+f_279+f_280+f_281+f_282+f_283+f_284+f_285+f_286+f_287+f_288+f_289+f_290+f_291+f_292+f_293+f_294+f_295+f_296+f_297+f_298+f_299+f_300+f_301+f_302+f_303+f_304+f_305+f_306+f_307+f_308+f_309+f_310+f_311+f_312+f_313+f_314+f_315+f_316+f_317+f_318+f_319+f_320+f_321+f_322+f_323+f_324+f_325+f_326+f_327+f_328+f_329+f_330+f_331+f_332+f_333+f_334+f_335+f_336+f_337+f_338+f_339+f_340+f_341+f_342+f_343+f_344+f_345+f_346+f_347+f_348+f_349+f_350, data = normalized_data)
+summary(model4)
+```

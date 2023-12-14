@@ -1,0 +1,76 @@
+---
+title: "decision_tree"
+author: "Qin Huang"
+date: "2023-09-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rpart)
+library(rpart.plot)
+```
+
+
+```{r cars}
+raw_data = read_csv("pca_data_10_d9.csv")
+
+set.seed(210)
+train_id = sample(1:nrow(raw_data), 0.7*nrow(raw_data))
+train = raw_data[train_id,]
+test = raw_data[-train_id,]
+
+
+```
+
+
+
+```{r}
+
+tree = rpart(pred_prob~.,data = train,control = rpart.control(maxdepth = 8))
+rpart.plot(tree)
+
+```
+
+
+```{r}
+
+pre_tree = predict(tree, newdata = test, type = 'vector')
+out = table(list(prediction = pre_tree, true = test$pred_prob))
+write.csv(out, file = "output_10.csv", row.names = T)
+```
+
+```{r}
+# Convert row and column names to numeric
+row_names_numeric <- as.numeric(rownames(out))
+col_names_numeric <- as.numeric(colnames(out))
+
+# Define the threshold
+threshold <- 0.5
+
+# Create logical indices for rows and columns based on the threshold
+row_index <- row_names_numeric < threshold
+col_index <- col_names_numeric < threshold
+
+# Calculate sums for the four regions
+sum1 <- sum(out[row_index, col_index])
+sum2 <- sum(out[row_index, !col_index])
+sum3 <- sum(out[!row_index, col_index])
+sum4 <- sum(out[!row_index, !col_index])
+
+```
+
+
+```{r}
+# Create a matrix with the given values
+matrix_data <- matrix(c(sum1, sum2, sum3, sum4), nrow = 2, byrow = TRUE)
+
+# Assign row and column names
+rownames(matrix_data) <- c("< 0.5", ">= 0.5")
+colnames(matrix_data) <- c("< 0.5", ">= 0.5")
+
+# Display the table
+print(matrix_data)
+
+```

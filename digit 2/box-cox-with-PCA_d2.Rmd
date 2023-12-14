@@ -1,0 +1,216 @@
+---
+title: "box-cox-with-PCA"
+output: html_document
+date: "2023-08-13"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Load the required libraries
+library(tidyverse)
+library(caret)
+library(MASS)
+library(car)
+
+
+```
+
+```{r}
+# Load the dataset
+
+d1 <- read.csv("pca_data_1_d2.csv")
+d2 <- read.csv("pca_data_2_d2.csv") 
+d3 <- read.csv("pca_data_3_d2.csv") 
+d4 <- read.csv("pca_data_5_d2.csv") 
+d5 <- read.csv("pca_data_10_d2.csv") 
+d6 <- read.csv("pca_data_20_d2.csv") 
+d7 <- read.csv("pca_data_40_d2.csv")
+d8 <- read.csv("pca_data_50_d2.csv") 
+d9 <- read.csv("pca_data_60_d2.csv") 
+d10 <- read.csv("pca_data_80_d2.csv") 
+d11 <- read.csv("pca_data_100_d2.csv") 
+d12 <- read.csv("pca_data_120_d2.csv") 
+d13 <- read.csv("pca_data_140_d2.csv")
+d14 <- read.csv("pca_data_150_d2.csv") 
+d15 <- read.csv("pca_data_160_d2.csv") 
+d16 <- read.csv("pca_data_180_d2.csv") 
+d17 <- read.csv("pca_data_200_d2.csv") 
+d18 <- read.csv("pca_data_250_d2.csv") 
+d19 <- read.csv("pca_data_300_d2.csv")
+d20 <- read.csv("pca_data_350_d2.csv")
+d21 <- read.csv("pca_data_400_d2.csv")
+
+
+# Update with the actual CSV file name
+
+# Display the structure of the loaded data
+# str(data)
+
+```
+
+```{r}
+# Load the dplyr package for data manipulation
+library(dplyr)
+
+# Normalize each feature to the range [0, 1]
+
+
+nd1 <- d1 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd2 <- d2 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd3 <- d3 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd4 <- d4 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd5 <- d5 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd6 <- d6 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd7 <- d7 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd8 <- d8 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd9 <- d9 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd10 <- d10 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd11 <- d11 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd12 <- d12 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd13 <- d13 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd14 <- d14 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd15 <- d15 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd16 <- d16 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd17 <- d17 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd18 <- d18 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd19 <- d19 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd20 <- d20 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd21 <- d21 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+
+# Display the first few rows of the normalized data
+#head(normalized_data)
+
+nd_list <- list(nd1, nd2, nd3, nd4, nd5, nd6, nd7, nd8, nd9, nd10, nd11, nd12, nd13, nd14,nd15,nd16,nd17,nd18,nd19,nd20,nd21)
+```
+
+```{r}
+col_name <- NULL;
+for (i in 1:400) {
+  
+  col_name <-  paste0(col_name,"f_", i,"+")
+  #data[, col_name] <- boxcox(data[, paste0("Feature_", i)], lambda = NULL)$x
+}
+cat(col_name)
+```
+
+```{r}
+group = c(1,2,3,5,10,20,40,50,60,80,100,120,140,150,160,180,200,250,300,350,400)
+
+ar2 <- numeric(length(group))
+r2 <- numeric(length(group))
+AIC <- numeric(length(group))
+
+for (i in 1:length(group)){
+  vars_set1 <- paste("f_", 1:group[i], sep = "")
+  rrr = paste(vars_set1, collapse = "+")
+  formula <- as.formula(paste("pred_prob ~", rrr))
+  model <- lm(formula, data = nd_list[[i]])
+  r2[i] <- summary(model)$r.squared
+  ar2[i] <- summary(model)$adj.r.squared
+  AIC[i] <- AIC(model)
+}
+
+
+```
+
+```{r}
+pca <- c(1,2,3,5,10,20,40,50,60,80,100,120,140,150,160,180,200,250,300,350,400)
+dp <- data.frame(pca, r2, ar2)
+
+plot <- ggplot(dp, aes(x=pca)) +
+  geom_line(aes(y=r2, color="R2"), size=1.2) +
+  geom_line(aes(y=ar2, color="Adjusted R2"), size=1.2) +
+  labs(title="R2 and Adjusted R2 vs PCA for digit 2",
+       x="PCA",
+       y="R2 / Adjusted R2") +
+  theme_minimal() +
+  scale_color_manual(values=c("R2"="blue", "Adjusted R2"="red")) +
+  theme(legend.position="top")
+
+print(plot)
+
+ggplot(dp,aes(x=pca))+
+  geom_line(aes(y=AIC))+
+  labs(title="AIC vs PCA for digit 2",
+       x="PCA",
+       y="AIC") +
+  theme_minimal()
+
+```
+
+```{r}
+
+residuals <- residuals(model_2)
+
+# Create the AV plot
+avPlots(model_2)
+
+# Create the CR plot
+crPlots(model_2)
+
+```
+
+```{r}
+# Apply Box-Cox transformation to the target variable (response) if needed
+# For example, if you have a response variable named 'y', you can transform it like this:
+# data$y_transformed <- boxcox(data$y, lambda = NULL)
+# Uncomment and modify the above line based on your data
+
+# Apply Box-Cox transformation to the features
+# Assuming the transformed features are named 'Feature_1_transformed', ..., 'Feature_10_transformed'
+
+boxcox(data[, paste0("Feature_1")], lambda = NULL)
+for (i in 1:10) {
+  boxcox(data[, paste0("Feature_", i)], lambda = NULL)
+  #col_name <- paste0("Feature_", i, "_transformed")
+  #data[, col_name] <- boxcox(data[, paste0("Feature_", i)], lambda = NULL)$x
+}
+
+# Define the list of transformed feature names
+transformed_feature_names <- paste0("Feature_", 1:10, "_transformed")  # Adjust the range as needed
+
+# Construct the formula for MLR
+formula <- reformulate(transformed_feature_names, response = "y")
+
+# Perform Multiple Linear Regression (MLR) using the transformed features
+model <- lm(formula, data = data)
+
+# Display the summary of the MLR model
+summary(model)
+
+
+```
+
+```{r}
+model3  = lm(pred_prob ~ f_1+f_2+f_3+f_4+f_5+f_6+f_7+f_8+f_9+f_10+f_11+f_12+f_13+f_14+f_15+f_16+f_17+f_18+f_19+f_20+f_21+f_22+f_23+f_24+f_25+f_26+f_27+f_28+f_29+f_30+f_31+f_32+f_33+f_34+f_35+f_36+f_37+f_38+f_39+f_40+f_41+f_42+f_43+f_44+f_45+f_46+f_47+f_48+f_49+f_50+f_51+f_52+f_53+f_54+f_55+f_56+f_57+f_58+f_59+f_60+f_61+f_62+f_63+f_64+f_65, data = normalized_data)
+summary(model3)
+```
+
+```{r}
+model4  = lm(pred_prob ~ f_250+f_251+f_252+f_253+f_254+f_255+f_256+f_257+f_258+f_259+f_260+f_261+f_262+f_263+f_264+f_265+f_266+f_267+f_268+f_269+f_270+f_271+f_272+f_273+f_274+f_275+f_276+f_277+f_278+f_279+f_280+f_281+f_282+f_283+f_284+f_285+f_286+f_287+f_288+f_289+f_290+f_291+f_292+f_293+f_294+f_295+f_296+f_297+f_298+f_299+f_300+f_301+f_302+f_303+f_304+f_305+f_306+f_307+f_308+f_309+f_310+f_311+f_312+f_313+f_314+f_315+f_316+f_317+f_318+f_319+f_320+f_321+f_322+f_323+f_324+f_325+f_326+f_327+f_328+f_329+f_330+f_331+f_332+f_333+f_334+f_335+f_336+f_337+f_338+f_339+f_340+f_341+f_342+f_343+f_344+f_345+f_346+f_347+f_348+f_349+f_350, data = normalized_data)
+summary(model4)
+```
