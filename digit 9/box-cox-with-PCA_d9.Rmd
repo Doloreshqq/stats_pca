@@ -1,0 +1,161 @@
+---
+title: "box-cox-with-PCA"
+output: html_document
+date: "2023-08-13"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Load the required libraries
+library(tidyverse)
+library(caret)
+library(MASS)
+library(car)
+
+
+```
+
+```{r}
+# Load the dataset
+d1 <- read.csv("pca_data_1_d9.csv")
+d2 <- read.csv("pca_data_2_d9.csv") 
+d3 <- read.csv("pca_data_3_d9.csv") 
+d4 <- read.csv("pca_data_5_d9.csv") 
+d5 <- read.csv("pca_data_10_d9.csv") 
+d6 <- read.csv("pca_data_20_d9.csv") 
+d7 <- read.csv("pca_data_40_d9.csv")
+d8 <- read.csv("pca_data_50_d9.csv") 
+d9 <- read.csv("pca_data_60_d9.csv") 
+d10 <- read.csv("pca_data_80_d9.csv") 
+d11 <- read.csv("pca_data_100_d9.csv") 
+d12 <- read.csv("pca_data_120_d9.csv") 
+d13 <- read.csv("pca_data_140_d9.csv")
+d14 <- read.csv("pca_data_150_d9.csv") 
+d15 <- read.csv("pca_data_160_d9.csv") 
+d16 <- read.csv("pca_data_180_d9.csv") 
+d17 <- read.csv("pca_data_200_d9.csv") 
+d18 <- read.csv("pca_data_250_d9.csv") 
+d19 <- read.csv("pca_data_300_d9.csv")
+d20 <- read.csv("pca_data_350_d9.csv")
+d21 <- read.csv("pca_data_400_d9.csv")
+
+
+# Update with the actual CSV file name
+
+# Display the structure of the loaded data
+# str(data)
+
+```
+
+```{r}
+# Load the dplyr package for data manipulation
+library(dplyr)
+
+# Normalize each feature to the range [0, 1]
+
+nd1 <- d1 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd2 <- d2 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd3 <- d3 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd4 <- d4 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd5 <- d5 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd6 <- d6 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd7 <- d7 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd8 <- d8 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd9 <- d9 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd10 <- d10 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd11 <- d11 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd12 <- d12 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd13 <- d13 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd14 <- d14 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd15 <- d15 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd16 <- d16 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd17 <- d17 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd18 <- d18 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd19 <- d19 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd20 <- d20 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd21 <- d21 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+
+# Display the first few rows of the normalized data
+#head(normalized_data)
+
+nd_list <- list(nd1, nd2, nd3, nd4, nd5, nd6, nd7, nd8, nd9, nd10, nd11, nd12, nd13, nd14,nd15,nd16,nd17,nd18,nd19,nd20,nd21)
+```
+
+```{r}
+col_name <- NULL;
+for (i in 1:400) {
+  
+  col_name <-  paste0(col_name,"f_", i,"+")
+  #data[, col_name] <- boxcox(data[, paste0("Feature_", i)], lambda = NULL)$x
+}
+cat(col_name)
+```
+
+```{r}
+group = c(1,2,3,5,10,20,40,50,60,80,100,120,140,150,160,180,200,250,300,350,400)
+
+ar2 <- numeric(length(group))
+r2 <- numeric(length(group))
+AIC <- numeric(length(group))
+
+for (i in 1:length(group)){
+  vars_set1 <- paste("f_", 1:group[i], sep = "")
+  rrr = paste(vars_set1, collapse = "+")
+  formula <- as.formula(paste("pred_prob ~", rrr))
+  model <- lm(formula, data = nd_list[[i]])
+  r2[i] <- summary(model)$r.squared
+  ar2[i] <- summary(model)$adj.r.squared
+  AIC[i] <- AIC(model)
+}
+
+
+```
+
+```{r}
+pca <- c(1,2,3,5,10,20,40,50,60,80,100,120,140,150,160,180,200,250,300,350,400)
+dp <- data.frame(pca, r2, ar2)
+
+plot <- ggplot(dp, aes(x=pca)) +
+  geom_line(aes(y=r2, color="R2"), size=1.2) +
+  geom_line(aes(y=ar2, color="Adjusted R2"), size=1.2) +
+  labs(title="R2 and Adjusted R2 vs PCA for digit 8",
+       x="PCA",
+       y="R2 / Adjusted R2") +
+  theme_minimal() +
+  scale_color_manual(values=c("R2"="blue", "Adjusted R2"="red")) +
+  theme(legend.position="top")
+
+print(plot)
+
+ggplot(dp,aes(x=pca))+
+  geom_line(aes(y=AIC))+
+  labs(title="AIC vs PCA for digit 9",
+       x="PCA",
+       y="AIC") +
+  theme_minimal()
+
+```

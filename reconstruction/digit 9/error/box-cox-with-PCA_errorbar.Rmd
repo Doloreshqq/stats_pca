@@ -1,0 +1,233 @@
+---
+title: "box-cox-with-PCA"
+output: html_document
+date: "2023-08-13"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Load the required libraries
+library(tidyverse)
+library(caret)
+library(MASS)
+library(car)
+
+
+```
+
+```{r}
+# Load the dataset
+d1 <- read.csv("pca_data_re100_100_d9.csv") 
+d2 <- read.csv("pca_data_re150_100_d9.csv") 
+d3 <- read.csv("pca_data_re200_100_d9.csv") 
+d4 <- read.csv("pca_data_100_d9.csv") 
+
+
+# Update with the actual CSV file name
+
+# Display the structure of the loaded data
+# str(data)
+
+```
+
+```{r}
+# Load the dplyr package for data manipulation
+library(dplyr)
+
+# Normalize each feature to the range [0, 1]
+
+nd1 <- d1 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd2 <- d2 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd3 <- d3 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+nd4 <- d4 %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+
+
+# Display the first few rows of the normalized data
+#head(normalized_data)
+
+nd_list <- list(nd1, nd2, nd3, nd4)
+```
+
+```{r}
+vars_set1 <- paste("f_", 1:100, sep = "")
+rrr = paste(vars_set1, collapse = "+")
+formula <- as.formula(paste("pred_prob ~", rrr))
+model_or <- lm(formula, data = nd4)
+model_100 <- lm(formula, data = nd1)
+model_150 <- lm(formula, data = nd2)
+model_200 <- lm(formula, data = nd3)
+
+```
+
+```{r}
+# 假设你有四个模型：model_or, model_100, model_150, model_200
+
+# 提取估计值（不包括截距）和误差
+estimates <- c(coef(model_or)[-1], coef(model_100)[-1], coef(model_150)[-1], coef(model_200)[-1])
+errors <- c(summary(model_or)$coef[-1, "Std. Error"], 
+            summary(model_100)$coef[-1, "Std. Error"],
+            summary(model_150)$coef[-1, "Std. Error"],
+            summary(model_200)$coef[-1, "Std. Error"])
+
+# 创建数据框
+daa <- data.frame(Model = rep(c("origin", "100", "150", "200"), each = length(estimates)/4),
+                   Variable = c(1:100),
+                   Estimate = estimates,
+                   Error = errors)
+
+# 导入 ggplot2 包
+library(ggplot2)
+
+ppp <- ggplot(daa, aes(x = Variable, y = Estimate, fill = Model, color = Model)) +
+  geom_point(data = subset(daa, Model == "origin"), size = 2, position = position_dodge(width = 0.8)) +
+  geom_point(data = subset(daa, Model != "origin"), size = 1, position = position_dodge(width = 0.8)) +
+
+  # 用 scale_color_manual 自定义颜色
+  scale_color_manual(values = c("origin" = "black", "100" = "burlywood4", "150" = "skyblue3", "200" = "pink3")) +
+  scale_fill_manual(values = c("origin" = "gray","100" = "burlywood3", "150" = "skyblue2", "200" = "pink2")) +
+
+  # 为 model_or 的 error bar 上下两端加粗
+  geom_ribbon(data = subset(daa, Model == "origin"), 
+              aes(ymin = Estimate - Error, ymax = Estimate + Error, fill = Model), 
+              alpha = 0.3, color = NA) +  # 移除边框，设置 color = NA
+  geom_errorbar(data = subset(daa, Model != "origin"), 
+                aes(ymin = Estimate - Error, ymax = Estimate + Error), 
+                width = 0.25, position = position_dodge(width = 0.8), size = 0.5) +
+  labs(title = "Model Estimates with Error Bars",
+       x = "Features",
+       y = "Estimate") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+# 显示图形
+print(ppp)
+```
+
+```{r}
+col_name <- NULL;
+for (i in 1:400) {
+  
+  col_name <-  paste0(col_name,"f_", i,"+")
+  #data[, col_name] <- boxcox(data[, paste0("Feature_", i)], lambda = NULL)$x
+}
+cat(col_name)
+```
+
+```{r}
+group = c(20,40,60,80,100,120,140,160,180,200)
+
+ar2 <- numeric(length(group))
+r2 <- numeric(length(group))
+
+for (i in 1:length(group)){
+  vars_set1 <- paste("f_", 1:group[i], sep = "")
+  rrr = paste(vars_set1, collapse = "+")
+  formula <- as.formula(paste("pred_prob ~", rrr))
+  model <- lm(formula, data = nd_list[[i]])
+  r2[i] <- summary(model)$r.squared
+  ar2[i] <- summary(model)$adj.r.squared
+}
+
+
+```
+
+```{r}
+pca <- c(20,40,60,80,100,120,140,160,180,200)
+dp <- data.frame(pca, r2, ar2)
+
+plot <- ggplot(dp, aes(x=pca)) +
+  geom_line(aes(y=r2, color="R2"), size=1.2) +
+  geom_line(aes(y=ar2, color="Adjusted R2"), size=1.2) +
+  labs(title="R2 and Adjusted R2 vs PCA for digit 9 (reconstruction 150)",
+       x="PCA",
+       y="R2 / Adjusted R2") +
+  theme_minimal() +
+  scale_color_manual(values=c("R2"="blue", "Adjusted R2"="red")) +
+  theme(legend.position="top")
+
+print(plot)
+
+```
+
+```{r}
+pca <- c(20,40,60,80,100,120,140,160,180,200)
+ad_r2 <- c(0.279,0.3603,0.3762,0.3709,0.3842,0.3843,0.3781,0.3728,0.3652,0.352)
+ad_100 <- c(0.2909,0.3625,0.3651,0.3715,0.3971,0.386,0.4075,0.408,0.4058,0.4089)
+ad_200 <- c(0.2735,0.351,0.3603,0.37,0.3766,0.3858,0.367,0.3555,0.3416,0.3403)
+
+dp <- data.frame(pca,ad_r2, ar2,ad_100,ad_200)
+
+plot <- ggplot(dp, aes(x=pca)) +
+  geom_line(aes(y=ad_r2, color="origin"), size=1.2) +
+  geom_line(aes(y=ad_100, color="reconstruction 100"), size=1.2) +
+  geom_line(aes(y=ad_200, color="reconstruction 200"), size=1.2) +
+  geom_line(aes(y=ar2, color="reconstruction 150"), size=1.2) +
+  labs(title="Adjusted R2 vs PCA for digit 9",
+       x="PCA",
+       y="Adjusted R2 (origin/reconstruction 100/reconstruction 150/reconstruction 200)") +
+  theme_minimal() +
+  scale_color_manual(values=c("origin"="blue","reconstruction 100"="green","reconstruction 150"="black", "reconstruction 200"="red")) +
+  theme(legend.position="top")
+
+print(plot)
+```
+
+```{r}
+
+residuals <- residuals(model_2)
+
+# Create the AV plot
+avPlots(model_2)
+
+# Create the CR plot
+crPlots(model_2)
+
+```
+
+```{r}
+# Apply Box-Cox transformation to the target variable (response) if needed
+# For example, if you have a response variable named 'y', you can transform it like this:
+# data$y_transformed <- boxcox(data$y, lambda = NULL)
+# Uncomment and modify the above line based on your data
+
+# Apply Box-Cox transformation to the features
+# Assuming the transformed features are named 'Feature_1_transformed', ..., 'Feature_10_transformed'
+
+boxcox(data[, paste0("Feature_1")], lambda = NULL)
+for (i in 1:10) {
+  boxcox(data[, paste0("Feature_", i)], lambda = NULL)
+  #col_name <- paste0("Feature_", i, "_transformed")
+  #data[, col_name] <- boxcox(data[, paste0("Feature_", i)], lambda = NULL)$x
+}
+
+# Define the list of transformed feature names
+transformed_feature_names <- paste0("Feature_", 1:10, "_transformed")  # Adjust the range as needed
+
+# Construct the formula for MLR
+formula <- reformulate(transformed_feature_names, response = "y")
+
+# Perform Multiple Linear Regression (MLR) using the transformed features
+model <- lm(formula, data = data)
+
+# Display the summary of the MLR model
+summary(model)
+
+
+```
+
+```{r}
+model3  = lm(pred_prob ~ f_1+f_2+f_3+f_4+f_5+f_6+f_7+f_8+f_9+f_10+f_11+f_12+f_13+f_14+f_15+f_16+f_17+f_18+f_19+f_20+f_21+f_22+f_23+f_24+f_25+f_26+f_27+f_28+f_29+f_30+f_31+f_32+f_33+f_34+f_35+f_36+f_37+f_38+f_39+f_40+f_41+f_42+f_43+f_44+f_45+f_46+f_47+f_48+f_49+f_50+f_51+f_52+f_53+f_54+f_55+f_56+f_57+f_58+f_59+f_60+f_61+f_62+f_63+f_64+f_65, data = normalized_data)
+summary(model3)
+```
+
+```{r}
+model4  = lm(pred_prob ~ f_250+f_251+f_252+f_253+f_254+f_255+f_256+f_257+f_258+f_259+f_260+f_261+f_262+f_263+f_264+f_265+f_266+f_267+f_268+f_269+f_270+f_271+f_272+f_273+f_274+f_275+f_276+f_277+f_278+f_279+f_280+f_281+f_282+f_283+f_284+f_285+f_286+f_287+f_288+f_289+f_290+f_291+f_292+f_293+f_294+f_295+f_296+f_297+f_298+f_299+f_300+f_301+f_302+f_303+f_304+f_305+f_306+f_307+f_308+f_309+f_310+f_311+f_312+f_313+f_314+f_315+f_316+f_317+f_318+f_319+f_320+f_321+f_322+f_323+f_324+f_325+f_326+f_327+f_328+f_329+f_330+f_331+f_332+f_333+f_334+f_335+f_336+f_337+f_338+f_339+f_340+f_341+f_342+f_343+f_344+f_345+f_346+f_347+f_348+f_349+f_350, data = normalized_data)
+summary(model4)
+```

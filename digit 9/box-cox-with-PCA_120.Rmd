@@ -1,0 +1,105 @@
+---
+title: "box-cox-with-PCA"
+output: html_document
+date: "2023-08-13"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Load the required libraries
+library(tidyverse)
+library(caret)
+library(MASS)
+library(car)
+
+
+```
+
+```{r}
+# Load the dataset
+data <- read.csv("pca_data_120.csv")  # Update with the actual CSV file name
+
+# Display the structure of the loaded data
+str(data)
+
+```
+
+```{r}
+# Load the dplyr package for data manipulation
+library(dplyr)
+
+# Normalize each feature to the range [0, 1]
+normalized_data <- data %>%
+  mutate(across(starts_with("Feature"), ~ (.-min(.)) / (max(.) - min(.))))
+
+# Display the first few rows of the normalized data
+head(normalized_data)
+
+
+```
+
+```{r}
+col_name <- NULL;
+for (i in 1:120) {
+  
+  col_name <-  paste0(col_name,"Feature_", i,"+")
+  #data[, col_name] <- boxcox(data[, paste0("Feature_", i)], lambda = NULL)$x
+}
+cat(col_name)
+```
+
+```{r}
+model_2  = lm(pred_prob ~ Feature_1+Feature_2+Feature_3+Feature_4+Feature_5+Feature_6+Feature_7+Feature_8+Feature_9+Feature_10+Feature_11+Feature_12+Feature_13+Feature_14+Feature_15+Feature_16+Feature_17+Feature_18+Feature_19+Feature_20+Feature_21+Feature_22+Feature_23+Feature_24+Feature_25+Feature_26+Feature_27+Feature_28+Feature_29+Feature_30+Feature_31+Feature_32+Feature_33+Feature_34+Feature_35+Feature_36+Feature_37+Feature_38+Feature_39+Feature_40+Feature_41+Feature_42+Feature_43+Feature_44+Feature_45+Feature_46+Feature_47+Feature_48+Feature_49+Feature_50+Feature_51+Feature_52+Feature_53+Feature_54+Feature_55+Feature_56+Feature_57+Feature_58+Feature_59+Feature_60+Feature_61+Feature_62+Feature_63+Feature_64+Feature_65+Feature_66+Feature_67+Feature_68+Feature_69+Feature_70+Feature_71+Feature_72+Feature_73+Feature_74+Feature_75+Feature_76+Feature_77+Feature_78+Feature_79+Feature_80+Feature_81+Feature_82+Feature_83+Feature_84+Feature_85+Feature_86+Feature_87+Feature_88+Feature_89+Feature_90+Feature_91+Feature_92+Feature_93+Feature_94+Feature_95+Feature_96+Feature_97+Feature_98+Feature_99+Feature_100+Feature_101+Feature_102+Feature_103+Feature_104+Feature_105+Feature_106+Feature_107+Feature_108+Feature_109+Feature_110+Feature_111+Feature_112+Feature_113+Feature_114+Feature_115+Feature_116+Feature_117+Feature_118+Feature_119+Feature_120, data = normalized_data)
+summary(model_2)
+```
+
+```{r}
+
+plot(model_2)
+```
+
+```{r}
+
+residuals <- residuals(model_2)
+
+# Create the AV plot
+avPlots(model_2)
+
+# Create the CR plot
+crPlots(model_2)
+
+```
+
+```{r}
+# Apply Box-Cox transformation to the target variable (response) if needed
+# For example, if you have a response variable named 'y', you can transform it like this:
+# data$y_transformed <- boxcox(data$y, lambda = NULL)
+# Uncomment and modify the above line based on your data
+
+# Apply Box-Cox transformation to the features
+# Assuming the transformed features are named 'Feature_1_transformed', ..., 'Feature_10_transformed'
+
+boxcox(data[, paste0("Feature_1")], lambda = NULL)
+for (i in 1:10) {
+  boxcox(data[, paste0("Feature_", i)], lambda = NULL)
+  #col_name <- paste0("Feature_", i, "_transformed")
+  #data[, col_name] <- boxcox(data[, paste0("Feature_", i)], lambda = NULL)$x
+}
+
+# Define the list of transformed feature names
+transformed_feature_names <- paste0("Feature_", 1:10, "_transformed")  # Adjust the range as needed
+
+# Construct the formula for MLR
+formula <- reformulate(transformed_feature_names, response = "y")
+
+# Perform Multiple Linear Regression (MLR) using the transformed features
+model <- lm(formula, data = data)
+
+# Display the summary of the MLR model
+summary(model)
+
+
+```

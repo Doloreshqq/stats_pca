@@ -1,0 +1,267 @@
+---
+title: "glm"
+author: "Qin Huang"
+date: "2023-09-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r cars}
+library(tidyverse)
+gg <- read.csv("glm.csv") 
+ng <- gg %>%
+  mutate(across(starts_with("f"), ~ (.-min(.)) / (max(.) - min(.))))
+train = ng %>% dplyr::select(is_nine,starts_with("f"))
+vars_set1 <- paste("f_", 1:350, sep = "")
+rrr = paste(vars_set1, collapse = "+")
+formula <- as.formula(paste("is_nine ~", rrr))
+glm_model <- glm(formula , data = train, family = binomial)
+predicted_values <- predict(glm_model, newdata = train,type = "response")
+```
+
+```{r}
+head(predicted_values)
+```
+
+```{r}
+h1 <- read.csv("df9_1_hidden.csv") 
+h2 <- read.csv("df9_2_hidden.csv")
+h3 <- read.csv("df9_3_hidden.csv")
+h4 <- read.csv("df9_4_hidden.csv")
+h5 <- read.csv("df9_5_hidden.csv")
+```
+
+```{r}
+e1 <- read.csv("df9_epoch_2.csv")
+e2 <- read.csv("df9_epoch_5.csv")
+e3 <- read.csv("df9_epoch_10.csv")
+e4 <- read.csv("df9_epoch_20.csv")
+e5 <- read.csv("df9_epoch_50.csv")
+```
+
+```{r}
+fig = c(1:448)
+dpp <- data.frame(fig,h1$pred_prob,h2$pred_prob,h3$pred_prob,h4$pred_prob,h5$pred_prob,e1$pred_prob,e2$pred_prob,e3$pred_prob,e4$pred_prob,e5$pred_prob,predicted_values)
+
+p <- ggplot(dpp, aes(x=fig)) +
+  geom_point(aes(y=h1$pred_prob, color="hidden 1"), size=1.2) +
+  geom_point(aes(y=h2$pred_prob, color="hidden 2"), size=1.2) +
+  geom_point(aes(y=h3$pred_prob, color="hidden 3"), size=1.2) +
+  geom_point(aes(y=h4$pred_prob, color="hidden 4"), size=1.2) +
+  geom_point(aes(y=h5$pred_prob, color="hidden 5"), size=1.2) +
+  #geom_point(aes(y=e1$pred_prob, color="epoch 2"), size=1.2) +
+  #geom_point(aes(y=e2$pred_prob, color="epoch 5"), size=1.2) +
+  #geom_point(aes(y=e3$pred_prob, color="epoch 10"), size=1.2) +
+  #geom_point(aes(y=e4$pred_prob, color="epoch 20"), size=1.2) +
+  #geom_point(aes(y=e5$pred_prob, color="epoch 50"), size=1.2) +
+  geom_point(aes(y=predicted_values, color="glm"), size=1.2) +
+  
+  labs(title="Probabilities of different models",
+       x="Figure",
+       y="Probabilities") +
+  theme_minimal() +
+  scale_color_manual(values=c("glm" = "black","hidden 1" = "lightpink","hidden 2" = "lightsalmon","hidden 3" = "tomato2","hidden 4" = "red3","hidden 5" = "brown4","epoch 2" = "lightsteelblue1","epoch 5" = "lightskyblue2","epoch 10" = "steelblue2","epoch 20" = "royalblue2","epoch 50" = "blue4")) +
+  theme(legend.position="top")
+```
+
+```{r}
+his <- ggplot(dpp) +
+  geom_histogram(aes(x = predicted_values, fill = "glm"),binwidth = 0.1, alpha = 0.5, position = "dodge") +
+  geom_histogram(aes(x = h1$pred_prob, fill = "hidden 1"), binwidth = 0.1, alpha = 0.5, position = "dodge") +
+  geom_histogram(aes(x = h2$pred_prob, fill = "hidden 2"), binwidth = 0.1, alpha = 0.5, position = "dodge") +
+  geom_histogram(aes(x = h3$pred_prob, fill = "hidden 3"), binwidth = 0.1, alpha = 0.5, position = "dodge") +
+  geom_histogram(aes(x = h4$pred_prob, fill = "hidden 4"), binwidth = 0.1, alpha = 0.5, position = "dodge") +
+  geom_histogram(aes(x = h5$pred_prob, fill = "hidden 5"), binwidth = 0.1, alpha = 0.5, position = "dodge") +
+  labs(title = "Histogram of Probabilities for Different Models",
+       x = "Probabilities",
+       y = "Frequency") +
+  scale_fill_manual(values = c("glm" = "black",
+                               "hidden 1" = "lightpink",
+                               "hidden 2" = "lightsalmon",
+                               "hidden 3" = "tomato2",
+                               "hidden 4" = "red3",
+                               "hidden 5" = "brown4")) +
+  theme_minimal()
+
+print(his)
+```
+
+```{r}
+
+```
+
+```{r}
+
+all_data <- data.frame(probability = c(predicted_values, h1$pred_prob, h2$pred_prob, h3$pred_prob, h4$pred_prob, h5$pred_prob),
+                        model = c(rep("glm", length(predicted_values)),
+                                  rep("hidden 1", length(h1$pred_prob)),
+                                  rep("hidden 2", length(h2$pred_prob)),
+                                  rep("hidden 3", length(h3$pred_prob)),
+                                  rep("hidden 4", length(h4$pred_prob)),
+                                  rep("hidden 5", length(h5$pred_prob))))
+
+
+his_new <- ggplot(all_data) +
+  geom_histogram(aes(x = probability, fill = model), binwidth = 0.1, alpha = 0.5, position = "dodge") +
+  labs(title = "Histogram of Probabilities for Different Models",
+       x = "Probabilities",
+       y = "Frequency") +
+  scale_fill_manual(values = c("glm" = "black",
+                               "hidden 1" = "lightpink",
+                               "hidden 2" = "lightsalmon",
+                               "hidden 3" = "tomato2",
+                               "hidden 4" = "red3",
+                               "hidden 5" = "brown4")) +
+  theme_minimal() #+
+  #facet_wrap(. ~ model)  # 或 facet_grid(~ model) 根据需要选择一种
+
+print(his_new)
+
+```
+
+```{r}
+hhis <- ggplot(dpp, aes(x = predicted_values, fill = "glm")) +
+  geom_histogram(binwidth = 0.1, alpha = 0.5, position = "identity") +
+  geom_histogram(data = dpp, aes(x = e1$pred_prob, fill = "epoch 2"), binwidth = 0.1, alpha = 0.5, position = "identity") +
+  geom_histogram(data = dpp, aes(x = e2$pred_prob, fill = "epoch 5"), binwidth = 0.1, alpha = 0.5, position = "identity") +
+  geom_histogram(data = dpp, aes(x = e3$pred_prob, fill = "epoch 10"), binwidth = 0.1, alpha = 0.5, position = "identity") +
+  geom_histogram(data = dpp, aes(x = e4$pred_prob, fill = "epoch 20"), binwidth = 0.1, alpha = 0.5, position = "identity") +
+  geom_histogram(data = dpp, aes(x = e5$pred_prob, fill = "epoch 50"), binwidth = 0.1, alpha = 0.5, position = "identity") +
+  labs(title = "Histogram of Probabilities for Different Models",
+       x = "Probabilities",
+       y = "Frequency") +
+  scale_fill_manual(values = c("glm" = "black",
+                               "epoch 2" = "lightsteelblue1",
+                               "epoch 5" = "lightskyblue2",
+                               "epoch 10" = "steelblue2",
+                               "epoch 20" = "royalblue2",
+                               "epoch 50" = "blue4")) +
+  theme_minimal()
+
+print(hhis)
+```
+
+```{r}
+all_data1 <- data.frame(probability = c(predicted_values, e1$pred_prob, e2$pred_prob, e3$pred_prob, e4$pred_prob, e5$pred_prob),
+                        model = c(rep("glm", length(predicted_values)),
+                                  rep("epoch 2", length(e1$pred_prob)),
+                                  rep("epoch 5", length(e2$pred_prob)),
+                                  rep("epoch 10", length(e3$pred_prob)),
+                                  rep("epoch 20", length(e4$pred_prob)),
+                                  rep("epoch 50", length(e5$pred_prob))))
+
+all_data1$model <- factor(all_data1$model, levels = c("glm", "epoch 2", "epoch 5", "epoch 10", "epoch 20", "epoch 50"))
+
+
+hhis_new <- ggplot(all_data1) +
+  geom_histogram(aes(x = probability, fill = model), binwidth = 0.1, alpha = 0.5, position = "dodge") +
+  labs(title = "Histogram of Probabilities for Different Models",
+       x = "Probabilities",
+       y = "Frequency") +
+  scale_fill_manual(values = c("glm" = "black",
+                               "epoch 2" = "lightsteelblue1",
+                               "epoch 5" = "lightskyblue2",
+                               "epoch 10" = "steelblue2",
+                               "epoch 20" = "royalblue2",
+                               "epoch 50" = "blue4")) +
+  theme_minimal() #+
+  #facet_wrap(. ~ model)  # 或 facet_grid(~ model) 根据需要选择一种
+
+print(hhis_new)
+```
+
+```{r}
+hh1 = h1 %>% rename(probs = pred_prob) %>% mutate(id = c(1:448),.before = 1)
+hh2 = h2 %>% rename(probs = pred_prob) %>% mutate(id = c(1:448),.before = 1)
+hh3 = h3 %>% rename(probs = pred_prob) %>% mutate(id = c(1:448),.before = 1)
+hh4 = h4 %>% rename(probs = pred_prob) %>% mutate(id = c(1:448),.before = 1)
+hh5 = h5 %>% rename(probs = pred_prob) %>% mutate(id = c(1:448),.before = 1)
+ee1 = e1 %>% rename(probs = pred_prob) %>% mutate(id = c(1:448),.before = 1)
+ee2 = e2 %>% rename(probs = pred_prob) %>% mutate(id = c(1:448),.before = 1)
+ee3 = e3 %>% rename(probs = pred_prob) %>% mutate(id = c(1:448),.before = 1)
+ee4 = e4 %>% rename(probs = pred_prob) %>% mutate(id = c(1:448),.before = 1)
+ee5 = e5 %>% rename(probs = pred_prob) %>% mutate(id = c(1:448),.before = 1)
+
+nng = ng %>% mutate(id = c(1:448),.before = 1)
+```
+
+```{r}
+rh1 = left_join(hh1,nng,by="id") %>% dplyr::select(probs,starts_with("f"))
+rh2 = left_join(hh2,nng,by="id") %>% dplyr::select(probs,starts_with("f"))
+rh3 = left_join(hh3,nng,by="id") %>% dplyr::select(probs,starts_with("f"))
+rh4 = left_join(hh4,nng,by="id") %>% dplyr::select(probs,starts_with("f"))
+rh5 = left_join(hh5,nng,by="id") %>% dplyr::select(probs,starts_with("f"))
+
+re1 = left_join(ee1,nng,by="id") %>% dplyr::select(probs,starts_with("f"))
+re2 = left_join(ee2,nng,by="id") %>% dplyr::select(probs,starts_with("f"))
+re3 = left_join(ee3,nng,by="id") %>% dplyr::select(probs,starts_with("f"))
+re4 = left_join(ee4,nng,by="id") %>% dplyr::select(probs,starts_with("f"))
+re5 = left_join(ee5,nng,by="id") %>% dplyr::select(probs,starts_with("f"))
+```
+
+```{r}
+v1 <- paste("f_", 1:350, sep = "")
+rr = paste(v1, collapse = "+")
+formula <- as.formula(paste("probs ~", rr))
+model_h1 <- lm(formula, data = rh1)
+model_h2 <- lm(formula, data = rh2)
+model_h3 <- lm(formula, data = rh3)
+model_h4 <- lm(formula, data = rh4)
+model_h5 <- lm(formula, data = rh5)
+
+model_e1 <- lm(formula, data = re1)
+model_e2 <- lm(formula, data = re2)
+model_e3 <- lm(formula, data = re3)
+model_e4 <- lm(formula, data = re4)
+model_e5 <- lm(formula, data = re5)
+
+```
+
+```{r}
+es <- c(coef(model_h1)[-1], coef(model_h2)[-1],coef(model_h3)[-1],coef(model_h4)[-1],coef(model_h5)[-1])
+ers <- c(   summary(model_h1)$coef[-1, "Std. Error"],
+            summary(model_h2)$coef[-1, "Std. Error"],
+            summary(model_h3)$coef[-1, "Std. Error"],
+            summary(model_h4)$coef[-1, "Std. Error"],
+            summary(model_h5)$coef[-1, "Std. Error"]  )
+
+# 创建数据框
+daa1 <- data.frame(Model = rep(c("hidden 1", "hidden 2", "hidden 3", "hidden 4", "hidden 5"), each = length(es)/5),
+                   Variable = c(1:350),
+                   Estimate = es,
+                   Error = ers)
+
+ppp1 <- ggplot(daa1, aes(x = Variable, y = Estimate, fill = Model, color = Model)) +
+  geom_point(size = 2, position = position_dodge(width = 0.8)) +
+
+  scale_fill_manual(values = c("hidden 1" = "lightpink1",
+                               "hidden 2" = "lightsalmon1",
+                               "hidden 3" = "tomato1",
+                               "hidden 4" = "red2",
+                               "hidden 5" = "brown3")) +
+  scale_color_manual(values = c("hidden 1" = "lightpink",
+                               "hidden 2" = "lightsalmon",
+                               "hidden 3" = "tomato2",
+                               "hidden 4" = "red3",
+                               "hidden 5" = "brown4")) +
+
+  # 为 model_or 的 error bar 上下两端加粗
+  geom_errorbar(aes(ymin = Estimate - Error, ymax = Estimate + Error), 
+                width = 0.25, position = position_dodge(width = 0.8), size = 0.5) +
+  labs(title = "Model Estimates with Error Bars",
+       x = "Features",
+       y = "Estimate") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+```
+
+```{r}
+
+```
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
